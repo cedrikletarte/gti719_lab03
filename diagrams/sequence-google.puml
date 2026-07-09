@@ -1,0 +1,53 @@
+@startuml sequence-google
+title MONSITE — Connexion via Google (OAuth2 + PKCE)
+
+autonumber
+
+actor "Utilisateur" as User
+participant "Navigateur" as Browser
+participant "MONSITE\n(Client App)" as Monsite
+participant "Google\n(Authorization Server)" as GoogleAuth
+participant "Google\n(Resource Server)" as GoogleRes
+
+User -> Browser: Clique "Se connecter avec Google"
+Browser -> Monsite: GET /api/auth/google/authorize
+activate Monsite
+Monsite -> Monsite: Génère state (CSRF) + PKCE\n(code_verifier, code_challenge = SHA256(verifier))
+Monsite -> Browser: 302 Redirect vers Google\n+ Set-Cookie monsite_oauth_state\n(signé HMAC, HttpOnly, SameSite=Lax, TTL 10 min)
+deactivate Monsite
+
+Browser -> GoogleAuth: GET /o/oauth2/v2/auth\n?client_id&redirect_uri&response_type=code\n&scope=openid email profile\n&state&code_challenge&code_challenge_method=S256
+activate GoogleAuth
+GoogleAuth -> User: Affiche l'écran de connexion / consentement Google
+User -> GoogleAuth: S'authentifie et autorise MONSITE
+GoogleAuth -> Browser: 302 Redirect\n/api/auth/google/callback?code&state
+deactivate GoogleAuth
+
+Browser -> Monsite: GET /api/auth/google/callback?code&state
+activate Monsite
+Monsite -> Monsite: Vérifie signature + expiration du cookie state\ncompare state (timingSafeEqual)\nsupprime immédiatement monsite_oauth_state
+Monsite -> GoogleAuth: POST /token\n(client_id, client_secret, code, redirect_uri,\ngrant_type=authorization_code, code_verifier)
+activate GoogleAuth
+GoogleAuth -> Monsite: 200 { access_token }
+deactivate GoogleAuth
+
+Monsite -> GoogleRes: GET /v1/userinfo\nAuthorization: Bearer access_token
+activate GoogleRes
+GoogleRes -> Monsite: 200 { sub, email, name, picture }
+deactivate GoogleRes
+
+Monsite -> Monsite: Construit le profil {provider, providerAccountId,\nemail, name, avatarUrl}\ncrée le cookie de session monsite_session
+Monsite -> Browser: 307 Redirect /profile\n+ Set-Cookie monsite_session\n(signé HMAC, HttpOnly, SameSite=Lax, TTL 2h)
+deactivate Monsite
+
+Browser -> Monsite: GET /profile (cookie monsite_session)
+Monsite -> Browser: 200 Page de profil (nom, courriel, avatar)
+
+note over Monsite, GoogleAuth
+  Si le callback est rejoué (double clic, retour arrière) : le cookie
+  monsite_oauth_state a déjà été supprimé lors de la 1ère lecture,
+  donc MONSITE rejette la requête lui-même (redirect /login?error=expired)
+  avant toute nouvelle tentative d'échange de code.
+end note
+
+@enduml

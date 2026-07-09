@@ -1,0 +1,70 @@
+@startuml sequence-idperso
+title MONSITE — Connexion via IDPERSO (fournisseur d'identité maison, OAuth2 + PKCE)
+
+autonumber
+
+actor "Utilisateur" as User
+participant "Navigateur" as Browser
+participant "MONSITE\n(Client App)" as Monsite
+participant "IDPERSO\n(Serveur d'autorisation)" as IdpAuth
+participant "IDPERSO\n(Serveur de ressources)" as IdpRes
+
+User -> Browser: Clique "Se connecter avec IDPERSO"
+Browser -> Monsite: GET /api/auth/idperso/authorize
+activate Monsite
+Monsite -> Monsite: Génère state (CSRF) + PKCE\n(code_verifier, code_challenge = SHA256(verifier))
+Monsite -> Browser: 302 Redirect vers IDPERSO\n+ Set-Cookie monsite_oauth_state\n(signé HMAC, HttpOnly, SameSite=Lax, TTL 10 min)
+deactivate Monsite
+
+Browser -> IdpAuth: GET /oauth/authorize\n?client_id=monsite&redirect_uri&response_type=code\n&scope=openid profile email\n&state&code_challenge&code_challenge_method=S256
+activate IdpAuth
+IdpAuth -> IdpAuth: Valide client_id et redirect_uri\n(comparaison stricte au seul client enregistré —\ngarde anti-open-redirect)
+
+alt Aucune session idperso_session active
+  IdpAuth -> Browser: 303 Redirect /oauth/login?return_to=/oauth/authorize?...
+  Browser -> IdpAuth: GET /oauth/login
+  IdpAuth -> User: Affiche le formulaire de connexion\n(+ lien "S'inscrire" si nouveau compte requis)
+  User -> IdpAuth: Soumet nom d'utilisateur + mot de passe
+  Browser -> IdpAuth: POST /oauth/login/submit
+  IdpAuth -> IdpAuth: Vérifie le mot de passe\n(scrypt + sel aléatoire par utilisateur,\ncomparaison en temps constant)
+  IdpAuth -> Browser: 303 Redirect vers return_to\n+ Set-Cookie idperso_session\n(signé HMAC, HttpOnly, SameSite=Lax, TTL 2h)
+  Browser -> IdpAuth: GET /oauth/authorize (avec idperso_session)
+end
+
+IdpAuth -> User: Affiche l'écran de consentement\n("MONSITE souhaite accéder à :\nnom d'utilisateur, courriel" — Autoriser / Refuser\n+ lien "Se connecter avec un autre compte")
+User -> IdpAuth: Clique "Autoriser"
+Browser -> IdpAuth: POST /oauth/authorize/decision\n(decision=approve + paramètres OAuth d'origine)
+IdpAuth -> IdpAuth: Crée un code d'autorisation à usage unique\n(Map en mémoire épinglée sur globalThis,\nTTL 60s, lié à clientId/redirectUri/userId/\ncode_challenge — jamais créé au GET, seulement ici)
+IdpAuth -> Browser: 303 Redirect\n/api/auth/idperso/callback?code&state
+deactivate IdpAuth
+
+Browser -> Monsite: GET /api/auth/idperso/callback?code&state
+activate Monsite
+Monsite -> Monsite: Vérifie signature + expiration du cookie state\ncompare state, supprime immédiatement monsite_oauth_state
+Monsite -> IdpAuth: POST /oauth/token\n(client_id, client_secret, code, redirect_uri,\ngrant_type=authorization_code, code_verifier)
+activate IdpAuth
+IdpAuth -> IdpAuth: Valide client_secret (égalité stricte)\nconsomme le code : marque "consumed"\n(rejette si déjà utilisé -> invalid_grant,\nou expiré -> invalid_grant)\nvérifie PKCE : SHA256(code_verifier) == code_challenge
+IdpAuth -> Monsite: 200 { access_token, token_type: "Bearer", expires_in }
+deactivate IdpAuth
+
+Monsite -> IdpRes: GET /oauth/userinfo\nAuthorization: Bearer access_token
+activate IdpRes
+IdpRes -> Monsite: 200 { sub, email, name, picture: null }
+deactivate IdpRes
+
+Monsite -> Monsite: Construit le profil {provider: "idperso",\nproviderAccountId: sub, email, name, avatarUrl}\ncrée le cookie de session monsite_session
+Monsite -> Browser: 307 Redirect /profile\n+ Set-Cookie monsite_session\n(signé HMAC, HttpOnly, SameSite=Lax, TTL 2h)
+deactivate Monsite
+
+Browser -> Monsite: GET /profile (cookie monsite_session)
+Monsite -> Browser: 200 Page de profil (nom, courriel, fournisseur = idperso)
+
+note over IdpAuth
+  Code non réutilisable / expirant (critère noté) : consumeAuthCode()
+  marque le code "consumed" de façon synchrone (donc atomique face à
+  des appels concurrents), et compare Date.now() à expiresAt. Toute
+  seconde tentative d'échange, ou tentative après le TTL, renvoie
+  {"error":"invalid_grant"} — sans jamais émettre de second jeton.
+end note
+
+@enduml

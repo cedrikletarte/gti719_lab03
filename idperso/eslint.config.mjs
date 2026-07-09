@@ -12,8 +12,6 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
-    // idperso/ is a separate Next.js project (Part 2) with its own lint config.
-    "idperso/**",
   ]),
 ]);
 
