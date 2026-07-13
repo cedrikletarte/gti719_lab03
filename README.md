@@ -1,36 +1,76 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# GTI719 — Lab 3 : Authentification OAuth2
 
-## Getting Started
+This repository contains two independent Next.js projects:
 
-First, run the development server:
+- **MONSITE** (repo root) — the OAuth2 *client* app (Part 1). Lets users sign in via Google, GitHub, or IDPERSO.
+- **[idperso/](idperso/)** — a custom OAuth2 *identity provider* (Part 2) that MONSITE can also sign in through.
+
+## Getting started
+
+Each project has its own dependencies, `.env` file, and dev server (different ports), so you need to set up both.
+
+### 1. Install dependencies
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cd idperso && npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Configure environment variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Copy each `.env.exemple` to `.env` and fill in the values (every variable is documented inline):
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+cp .env.exemple .env
+cp idperso/.env.exemple idperso/.env
+```
 
-## Learn More
+`SESSION_SECRET` in both files, and the shared `IDPERSO_CLIENT_ID` / `IDPERSO_CLIENT_SECRET` / `MONSITE_CLIENT_ID` / `MONSITE_CLIENT_SECRET` pairs between the two `.env` files, can be generated with:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+`GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` and `GITHUB_CLIENT_ID`/`GITHUB_CLIENT_SECRET` come from registering OAuth apps with each provider — see below.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 3. Run both dev servers
 
-## Deploy on Vercel
+```bash
+npm run dev          # MONSITE on http://localhost:3000
+cd idperso && npm run dev   # IDPERSO on http://localhost:4000
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Open [http://localhost:3000/login](http://localhost:3000/login).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Setting up Google OAuth credentials
+
+1. Go to the [Google Cloud Console](https://console.cloud.google.com/).
+2. Create a new project and name it **gti719**.
+3. In the left menu, go to **APIs & Services**.
+4. Open **OAuth consent screen** and complete the initial configuration if prompted (keep it in **Testing** mode and add yourself as a test user — use a dedicated account, not your personal one).
+5. Go to the **Clients** section and click **Create client**.
+6. Configure the client:
+   - **Application type:** Web application
+   - **Authorized redirect URIs:** `http://localhost:3000/api/auth/google/callback`
+7. Click **Create**.
+8. Copy the generated **Client ID** and **Client Secret** into your local `.env`:
+   ```env
+   GOOGLE_CLIENT_ID=<your_client_id>
+   GOOGLE_CLIENT_SECRET=<your_client_secret>
+   ```
+
+## Setting up GitHub OAuth credentials
+
+1. Go to [GitHub](https://github.com/) with a dedicated account (not your personal one).
+2. Open **Settings** → **Developer settings** → **OAuth Apps**.
+3. Click **New OAuth App**.
+4. Configure the app:
+   - **Application name:** gti719
+   - **Homepage URL:** `http://localhost:3000`
+   - **Authorization callback URL:** `http://localhost:3000/api/auth/github/callback`
+5. Click **Register application**.
+6. Copy the generated **Client ID** and **Client Secret** into your local `.env`:
+   ```env
+   GITHUB_CLIENT_ID=<your_client_id>
+   GITHUB_CLIENT_SECRET=<your_client_secret>
+   ```
