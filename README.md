@@ -46,6 +46,16 @@ Open [http://localhost:3000/login](http://localhost:3000/login).
 
 ---
 
+## IDPERSO test account
+
+IDPERSO stores its users in `idperso/data/users.json`, which is gitignored (local to each machine) — so there's no shared account. For consistency, use these credentials as the default test account when registering locally via [http://localhost:4000/register](http://localhost:4000/register):
+
+- **Name:** `demo`
+- **Email:** `demo@example.com`
+- **Password:** `Demo1234!`
+
+---
+
 ## Setting up Google OAuth credentials
 
 1. Go to the [Google Cloud Console](https://console.cloud.google.com/).
