@@ -1,9 +1,11 @@
-# GTI719 — Lab 3 : Authentification OAuth2
+# GTI719 — Laboratoire 3 : Module d'authentification
 
 This repository contains two independent Next.js projects:
 
 - **MONSITE** (repo root) — the OAuth2 *client* app (Part 1). Lets users sign in via Google, GitHub, or IDPERSO.
 - **[idperso/](idperso/)** — a custom OAuth2 *identity provider* (Part 2) that MONSITE can also sign in through.
+
+---
 
 ## Getting started
 
@@ -42,6 +44,8 @@ cd idperso && npm run dev   # IDPERSO on http://localhost:4000
 
 Open [http://localhost:3000/login](http://localhost:3000/login).
 
+---
+
 ## Setting up Google OAuth credentials
 
 1. Go to the [Google Cloud Console](https://console.cloud.google.com/).
@@ -58,6 +62,8 @@ Open [http://localhost:3000/login](http://localhost:3000/login).
    GOOGLE_CLIENT_ID=<your_client_id>
    GOOGLE_CLIENT_SECRET=<your_client_secret>
    ```
+
+---
 
 ## Setting up GitHub OAuth credentials
 

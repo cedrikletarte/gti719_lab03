@@ -33,6 +33,12 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env
 
+out/
+
+# Fichiers d'environnement virtuel
+.venv
+venv
+
 # vercel
 .vercel
 
@@ -40,6 +46,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# Fichiers Copilot
 plan1.md
 plan2.md
 AGENTS.md
