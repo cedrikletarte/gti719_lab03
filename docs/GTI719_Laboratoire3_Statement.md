@@ -8,11 +8,10 @@ Version v1.0
 ---
 
 ## Module d’authentification
+
 L’authentification est le processus par lequel l’identité d’un utilisateur accédant à un système ou à un réseau est vérifiée. Il permet de valider qu’un utilisateur est bien la personne qu’il prétend être. L’authentification se fait communément en utilisant un identifiant et un mot de passe que l’utilisateur est le seul à connaître.
 
-Lorsque nous voulons développer un nouveau service web, deux choix s’offrent à nous. Développer une
-nouvelle infrastructure d’authentification (base de données contenant les identifiants et les authentifiants
-des utilisateurs) ou utiliser une infrastructure déjà existante (p.ex., Google et un autre de votre choix).
+Lorsque nous voulons développer un nouveau service web, deux choix s’offrent à nous. Développer une nouvelle infrastructure d’authentification (base de données contenant les identifiants et les authentifiants des utilisateurs) ou utiliser une infrastructure déjà existante (p.ex., Google et un autre de votre choix).
 
 La gestion d’une session est le processus par lequel un serveur maintient l’état d’une communication avec un tiers. Le serveur doit retenir certaines informations lui permettant de savoir comment réagir aux différentes requêtes (p. ex., les HTML cookies d’une application web). La session est identifiée par un numéro qui est transmis entre le client et le serveur lors des requêtes. Cet identifiant se doit d'être unique pour chaque communication établie entre le serveur et un tiers.
 
@@ -53,7 +52,8 @@ Ce nouveau fournisseur d’identités devra pouvoir être intégré au service w
 
 Il existe plusieurs options possibles lorsque vous mettez en œuvre un protocole aussi complexe que OAuth v2. Nous vous suggèrons de faire les mêmes choix que Google. Ainsi, la façon que votre service MONSITE interagit avec Google et celle avec laquelle il interagit avec IDPERSO devraient être interopérables.
 
-Informations sur le laboratoire
+**Informations sur le laboratoire** :
+
 - Quatre séances sont dédiées à ce laboratoire : 4, 11, 18 juin et 2 juillet.
 - L'évaluation de l'application se fera pendant la TROISIÈME (18 juin) et la QUATRIÈME (2 juillet) séances de laboratoire.
   - Présence obligatoire en laboratoire pour ces deux évaluations
@@ -63,8 +63,7 @@ Informations sur le laboratoire
 - Le rapport de laboratoire devra être :
   - Remis le 10 juillet à18h (via Moodle).
   - La remise du code source (Partie I – Client (MONSITE) et Partie II – Serveur (IDPERSO)) peut être remis en partageant votre entrepôt de code avec le chargé de lab.
-- Jusqu'à 10% de la note du rapport pourra être retiré pour la qualité du français et jusqu'à 5% pour le
-non-respect des normes indiquées dans le document de remise.
+- Jusqu'à 10% de la note du rapport pourra être retiré pour la qualité du français et jusqu'à 5% pour le non-respect des normes indiquées dans le document de remise.
 - Aucune retard n’est permis.
 
 ---
