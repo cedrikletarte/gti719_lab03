@@ -1,0 +1,129 @@
+@startuml diagram_class
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam class {
+  BackgroundColor White
+  BorderColor Black
+  ArrowColor Black
+}
+
+title Architecture a haut niveau — MONSITE (client OAuth) & IDPERSO (fournisseur d'identite)
+
+package "MONSITE — Client OAuth" #F5F8FF {
+
+  interface OAuthProviderConfig <<type>> {
+    +id, endpoints, scope, usePkce
+    +mapUserInfo(raw): OAuthUserInfo
+  }
+
+  class OAuthUserInfo <<type>> {
+    +provider, providerAccountId
+    +email, name, avatarUrl
+  }
+
+  class ProviderRegistry <<module>> {
+    .. providers/{google,github,idperso} ..
+    +getProvider(id)
+    +listProviders()
+  }
+
+  class OAuthClient <<module>> {
+    .. oauth/client.ts ..
+    +buildAuthorizationUrl()
+    +exchangeCodeForToken()
+    +fetchUserInfo()
+  }
+
+  class SecurityUtils <<module>> {
+    .. crypto/signedToken.ts, oauth/pkce.ts, oauth/state.ts ..
+    +signToken() / verifyToken()
+    +createPkcePair()
+    +createOAuthState() / verifyOAuthState()
+  }
+
+  class SessionManager <<module>> {
+    .. session.ts ..
+    +createSessionToken()
+    +readSession()
+  }
+
+  class AuthFlowController <<boundary>> {
+    .. routes /api/auth/*, pages /login, /profile ..
+    demarre et termine le flux OAuth
+    (authorize, callback, logout)
+  }
+
+  AuthFlowController --> ProviderRegistry
+  AuthFlowController --> OAuthClient
+  AuthFlowController --> SecurityUtils
+  AuthFlowController --> SessionManager
+  ProviderRegistry --> OAuthProviderConfig
+  OAuthClient ..> OAuthProviderConfig
+  OAuthClient ..> OAuthUserInfo
+  SessionManager --> SecurityUtils
+  SessionManager ..> OAuthUserInfo
+}
+
+package "IDPERSO — Fournisseur d'identite (IdP)" #FFF8F0 {
+
+  class AuthorizeValidator <<module>> {
+    .. oauth/validateAuthorizeRequest.ts ..
+    +validateAuthorizeRequest(query)
+  }
+
+  class AuthCodeStore <<module>> {
+    .. store/authCodes.ts ..
+    +createAuthCode()
+    +consumeAuthCode()
+  }
+  class AuthCodeRecord <<type>> {
+    +clientId, redirectUri, userId
+    +codeChallenge, expiresAt, consumed
+  }
+
+  class AccessTokenStore <<module>> {
+    .. store/accessTokens.ts ..
+    +createAccessToken()
+    +getAccessToken()
+  }
+  class AccessTokenRecord <<type>> {
+    +userId, clientId, scope, expiresAt
+  }
+
+  class UserStore <<module>> {
+    .. users/store.ts (data/users.json) ..
+    +createUser() / findUserByUsername()
+    +verifyPassword()
+  }
+  class User <<type>> {
+    +id, username, email
+    +passwordHash, salt
+  }
+
+  class SessionManagerIdp <<module>> {
+    .. session.ts ..
+    +createSessionToken()
+    +readSession()
+  }
+
+  class IdpEndpoints <<boundary>> {
+    .. routes /oauth/{authorize,token,userinfo,login,logout}, /register ..
+    expose le protocole OAuth v2 + PKCE
+    (equivalent fonctionnel de Google)
+  }
+
+  IdpEndpoints --> AuthorizeValidator
+  IdpEndpoints --> AuthCodeStore
+  IdpEndpoints --> AccessTokenStore
+  IdpEndpoints --> UserStore
+  IdpEndpoints --> SessionManagerIdp
+  AuthCodeStore --> AuthCodeRecord
+  AccessTokenStore --> AccessTokenRecord
+  UserStore --> User
+}
+
+AuthFlowController ..> IdpEndpoints : HTTP — OAuth v2 + PKCE\n(authorize / token / userinfo)
+
+@enduml
