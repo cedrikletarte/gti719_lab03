@@ -1,5 +1,6 @@
-@startuml sequence-idperso
-title MONSITE — Connexion via IDPERSO (fournisseur d'identité maison, OAuth2 + PKCE)
+@startuml diagram_sequence_idperso
+
+title Diagramme de séquence - MONSITE : Connexion via IDPERSO (fournisseur d'identité maison, OAuth2 + PKCE)
 
 autonumber
 

@@ -1,5 +1,7 @@
 @startuml diagram_class
 
+title Diagramme de classes - MONSITE (client OAuth) & IDPERSO (fournisseur d'identite)
+
 skinparam classAttributeIconSize 0
 skinparam packageStyle rectangle
 skinparam shadowing false
@@ -8,8 +10,6 @@ skinparam class {
   BorderColor Black
   ArrowColor Black
 }
-
-title Architecture a haut niveau — MONSITE (client OAuth) & IDPERSO (fournisseur d'identite)
 
 package "MONSITE — Client OAuth" #F5F8FF {
 

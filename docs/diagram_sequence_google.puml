@@ -1,5 +1,6 @@
-@startuml sequence-google
-title MONSITE — Connexion via Google (OAuth2 + PKCE)
+@startuml diagram_sequence_google
+
+title Diagramme de séquence - MONSITE : Connexion via Google (OAuth2 + PKCE)
 
 autonumber
 

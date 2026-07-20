@@ -34,7 +34,7 @@ L'arborescence suivante présente les fichiers du projet.
 GTI719_Lab3/                                # Racine du projet
 ├── README.md                               # Présentation du projet
 ├── docs/                                   # Documentation du projet
-│   ├── diagrams                            # Images générées des diagrammes
+│   ├── diagrams/                           # Images générées des diagrammes
 │   ├── diagram_class.puml                  # Diagramme de classes
 │   ├── diagram_sequence_google.puml        # Diagramme de séquence
 │   ├── diagram_sequence_github.puml        # Diagramme de séquence
