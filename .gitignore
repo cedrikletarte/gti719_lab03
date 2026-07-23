@@ -47,7 +47,5 @@ venv
 next-env.d.ts
 
 # Fichiers Copilot
-plan1.md
-plan2.md
 AGENTS.md
 CLAUDE.md
