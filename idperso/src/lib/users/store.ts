@@ -38,8 +38,15 @@ export function findUserById(id: string): User | undefined {
 
 export function createUser(username: string, email: string, password: string): User {
   const users = readUsers();
+  
+  // Vérifier que le nom d'utilisateur n'est pas déjà pris (insensible à la casse)
   if (users.some((u) => u.username.toLowerCase() === username.toLowerCase())) {
     throw new Error("username_taken");
+  }
+
+  // Vérifier que l'email n'est pas déjà pris (insensible à la casse)
+  if (users.some((u) => u.email.toLowerCase() === email.toLowerCase())) {
+    throw new Error("email_taken");
   }
 
   const salt = randomBytes(16).toString("hex");

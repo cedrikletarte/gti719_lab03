@@ -1,5 +1,6 @@
 const ERROR_MESSAGES: Record<string, string> = {
-  username_taken: "Ce nom d'utilisateur est déjà pris.",
+  username_taken: "Ce nom d'utilisateur est déjà utilisé.",
+  email_taken: "Cette adresse courriel est déjà utilisée.",
   missing_fields: "Tous les champs sont requis.",
 };
 
