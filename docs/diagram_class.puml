@@ -1,7 +1,8 @@
 @startuml diagram_class
+title Diagramme de classes - MONSITE & IDPERSO & IdP externes
 
-title Diagramme de classes - MONSITE (client OAuth) & IDPERSO (fournisseur d'identite)
-
+'Style
+left to right direction
 skinparam classAttributeIconSize 0
 skinparam packageStyle rectangle
 skinparam shadowing false
@@ -10,8 +11,17 @@ skinparam class {
   BorderColor Black
   ArrowColor Black
 }
+' Modifier la distance entre les classes
+skinparam nodesep 4
+' Modifier la distance verticale entre les paquets
+skinparam ranksep 10
+' Modifier la distance horizontale entre les paquets
+skinparam packageMargin 4
 
-package "MONSITE — Client OAuth" #F5F8FF {
+'Objets
+
+'Paquetage MONSITE
+package "MONSITE - Client OAuth" as MONSITE #F5F8FF{
 
   interface OAuthProviderConfig <<type>> {
     +id, endpoints, scope, usePkce
@@ -23,10 +33,17 @@ package "MONSITE — Client OAuth" #F5F8FF {
     +email, name, avatarUrl
   }
 
-  class ProviderRegistry <<module>> {
-    .. providers/{google,github,idperso} ..
-    +getProvider(id)
-    +listProviders()
+  class SecurityUtils <<module>> {
+    .. crypto/signedToken.ts, oauth/pkce.ts, oauth/state.ts ..
+    +signToken() / verifyToken()
+    +createPkcePair()
+    +createOAuthState() / verifyOAuthState()
+  }
+
+  class AuthFlowController <<boundary>> {
+    .. routes /api/auth/*, pages /login, /profile ..
+    demarre et termine le flux OAuth
+    (authorize, callback, logout)
   }
 
   class OAuthClient <<module>> {
@@ -36,37 +53,21 @@ package "MONSITE — Client OAuth" #F5F8FF {
     +fetchUserInfo()
   }
 
-  class SecurityUtils <<module>> {
-    .. crypto/signedToken.ts, oauth/pkce.ts, oauth/state.ts ..
-    +signToken() / verifyToken()
-    +createPkcePair()
-    +createOAuthState() / verifyOAuthState()
-  }
-
   class SessionManager <<module>> {
     .. session.ts ..
     +createSessionToken()
     +readSession()
   }
 
-  class AuthFlowController <<boundary>> {
-    .. routes /api/auth/*, pages /login, /profile ..
-    demarre et termine le flux OAuth
-    (authorize, callback, logout)
+  class ProviderRegistry <<module>> {
+    .. providers/{google,github,idperso} ..
+    +getProvider(id)
+    +listProviders()
   }
-
-  AuthFlowController --> ProviderRegistry
-  AuthFlowController --> OAuthClient
-  AuthFlowController --> SecurityUtils
-  AuthFlowController --> SessionManager
-  ProviderRegistry --> OAuthProviderConfig
-  OAuthClient ..> OAuthProviderConfig
-  OAuthClient ..> OAuthUserInfo
-  SessionManager --> SecurityUtils
-  SessionManager ..> OAuthUserInfo
 }
 
-package "IDPERSO — Fournisseur d'identite (IdP)" #FFF8F0 {
+'Paquetage IDPERSO
+package "IDPERSO — Fournisseur d'identité (IdP)" as IDPERSO #FFF8F0 {
 
   class AuthorizeValidator <<module>> {
     .. oauth/validateAuthorizeRequest.ts ..
@@ -113,17 +114,54 @@ package "IDPERSO — Fournisseur d'identite (IdP)" #FFF8F0 {
     expose le protocole OAuth v2 + PKCE
     (equivalent fonctionnel de Google)
   }
-
-  IdpEndpoints --> AuthorizeValidator
-  IdpEndpoints --> AuthCodeStore
-  IdpEndpoints --> AccessTokenStore
-  IdpEndpoints --> UserStore
-  IdpEndpoints --> SessionManagerIdp
-  AuthCodeStore --> AuthCodeRecord
-  AccessTokenStore --> AccessTokenRecord
-  UserStore --> User
 }
 
-AuthFlowController ..> IdpEndpoints : HTTP — OAuth v2 + PKCE\n(authorize / token / userinfo)
+'Paquetage IdP externes
+package "IdP externes" as IDPEXT #F0FFF8 {
+
+  class GoogleIdP <<external>> {
+    .. accounts.google.com / oauth2.googleapis.com / openidconnect.googleapis.com ..
+    Authorization Server + Resource Server
+    OIDC: code, token, userinfo
+  }
+
+  class GitHubIdP <<external>> {
+    .. github.com / api.github.com ..
+    Authorization Server + Resource Server
+    OAuth 2.0: code, token, userinfo
+  }
+}
+
+'Relations
+
+'Relations MONSITE
+AuthFlowController --> ProviderRegistry : sélectionne le provider
+AuthFlowController --> OAuthClient : orchestre le flux OAuth
+AuthFlowController --> SecurityUtils : utilise les utilitaires
+AuthFlowController --> SessionManager : crée la session
+ProviderRegistry --> OAuthProviderConfig : retourne la config
+OAuthClient ..> OAuthProviderConfig : lit la config
+OAuthClient ..> OAuthUserInfo : mappe le profil
+SessionManager --> SecurityUtils : signe et vérifie
+SessionManager ..> OAuthUserInfo : encapsule le profil
+
+'Relations IDPERSO
+IdpEndpoints --> AuthorizeValidator : valide l'autorisation
+IdpEndpoints --> AuthCodeStore : émet les codes
+IdpEndpoints --> AccessTokenStore : émet les jetons
+IdpEndpoints --> UserStore : lit les utilisateurs
+IdpEndpoints --> SessionManagerIdp : gère la session
+AuthCodeStore --> AuthCodeRecord : stocke les codes
+AccessTokenStore --> AccessTokenRecord : stocke les jetons
+UserStore --> User : persiste les comptes
+
+'Relations inter-systèmes
+OAuthClient ..> GoogleIdP : HTTP - OAuth 2.0 + OIDC
+OAuthClient ..> GitHubIdP : HTTP - OAuth 2.0
+AuthFlowController ..> IdpEndpoints : HTTP - OAuth 2.0 + PKCE\n(authorize / token / userinfo)
+
+'Disposition
+IDPEXT -down[hidden]-> MONSITE
+MONSITE -down[hidden]-> IDPERSO
 
 @enduml
